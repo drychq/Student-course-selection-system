@@ -24,9 +24,9 @@ public:
 protected:
     //输入处理工具函数，处理各种输入异常情况
     void clearInput();
-    int getIntInput(const std::string& prompt);
-    std::string getStringInput(const std::string& prompt);
-    bool getConfirmation(const std::string& prompt);
+    int getIntInput(const std::string& input);
+    std::string getStringInput(const std::string& input);
+    bool getConfirmation(const std::string& input);
 };
 
 //主菜单作为顶层控制器，管理各个子菜单
