@@ -64,3 +64,31 @@ void Student::viewCourses() const {
     }
     cout << "----------------------------------------" << endl;
 }
+
+//格式化显示成绩信息，处理未评分的特殊情况
+void Student::viewScores() const {
+    if (m_enrolledCourses.empty()) {
+        cout << "学生 " << m_name << " 还没有选择任何课程。" << endl;
+        return;
+    }
+
+    cout << "学生 " << m_name << " (ID: " << m_studentID << ") 的成绩：" << endl;
+    cout << "----------------------------------------" << endl;
+    cout << "课程名称\t\t成绩" << endl;
+    cout << "----------------------------------------" << endl;
+
+    for (const auto& course : m_enrolledCourses) {
+        int score = course->getScore(m_studentID);
+        cout << course->m_courseName;
+
+        //根据课程名称长度调整显示格式，保持对齐
+        if (course->m_courseName.length() < 8) {
+            cout << "\t\t";
+        } else {
+            cout << "\t";
+        }
+
+        cout << (score == -1 ? "未评分" : std::to_string(score)) << endl;
+    }
+    cout << "----------------------------------------" << endl;
+}

@@ -46,6 +46,20 @@ void System::addCourse(const string& name, int id, const string& desc) {
     cout << "成功添加课程：" << name << "（ID: " << id << "）" << endl;
 }
 
+//添加教师时检查姓名唯一性，避免混淆
+void System::addTeacher(const string& name) {
+    for (const auto& teacher : m_teachers) {
+        if (teacher->m_name == name) {
+            cerr << "错误：教师 \"" << name << "\" 已存在，无法添加同名教师。" << endl;
+            return;
+        }
+    }
+
+    auto newTeacher = make_shared<Teacher>(name);
+    m_teachers.push_back(newTeacher);
+    cout << "成功添加教师：" << name << endl;
+}
+
 //O(n)复杂度的查找接口，返回智能指针避免悬垂引用
 shared_ptr<Student> System::findStudent(int id) {
     for (const auto& student : m_students) {
@@ -61,6 +75,16 @@ shared_ptr<Course> System::findCourse(int id) {
     for (const auto& course : m_courses) {
         if (course->m_courseID == id) {
             return course;
+        }
+    }
+    return nullptr;
+}
+
+//O(n)复杂度的查找接口，使用姓名作为唯一标识
+shared_ptr<Teacher> System::findTeacher(const string& name) {
+    for (const auto& teacher : m_teachers) {
+        if (teacher->m_name == name) {
+            return teacher;
         }
     }
     return nullptr;

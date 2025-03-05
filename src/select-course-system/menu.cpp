@@ -216,7 +216,15 @@ void StudentMenu::selectCourse(System& system) {
 }
 
 void StudentMenu::viewScores(System& system) {
-    //TODO
+    int studentID = getIntInput("输入学生ID: ");
+    if (studentID == -1) return;
+
+    auto student = system.findStudent(studentID);
+    if (student) {
+        student->viewScores();
+    } else {
+        cout << "未找到学生。\n";
+    }
 }
 
 void StudentMenu::viewCourses(System& system) {
@@ -245,10 +253,10 @@ void TeacherMenu::execute(System& system) {
     int choice = getIntInput("");
     switch (choice) {
     case 1:
-        //addTeacher(system);
+        addTeacher(system);
         break;
     case 2:
-        //importScore(system);
+        importScore(system);
         break;
     case 3:
         //viewCourses(system);
@@ -260,6 +268,76 @@ void TeacherMenu::execute(System& system) {
     }
 }
 
+void TeacherMenu::addTeacher(System& system) {
+    string name = getStringInput("输入教师姓名: ");
+    if (name.empty()) return;
+
+    // 验证教师名称唯一性
+    if (system.findTeacher(name)) {
+        cout << "错误：教师 \"" << name << "\" 已存在，请使用其他名称。\n";
+        return;
+    }
+
+    if (getConfirmation("确定要添加教师 \"" + name + "\" 吗？")) {
+        system.addTeacher(name);
+        cout << "教师添加成功！\n";
+    } else {
+        cout << "已取消添加教师操作。\n";
+    }
+}
+
+// 导入学生成绩
+void TeacherMenu::importScore(System& system) {
+    string teacherName = getStringInput("请输入教师姓名: ");
+    auto teacher = system.findTeacher(teacherName);
+    if (!teacher) {
+        cout << "找不到该教师！请检查姓名是否正确\n";
+        return;
+    }
+
+    int courseID = getIntInput("请输入课程ID: ");
+    if (courseID == -1) {
+        cout << "输入无效！课程ID必须是正整数\n";
+        return;
+    }
+
+    auto course = system.findCourse(courseID);
+    if (!course) {
+        cout << "找不到该课程！ID可能输错了\n";
+        return;
+    }
+
+    int studentID = getIntInput("请输入学生ID: ");
+    if (studentID == -1) {
+        cout << "输入无效！学生ID不能是负数\n";
+        return;
+    }
+
+    auto student = system.findStudent(studentID);
+    if (!student) {
+        cout << "找不到该学生！ID可能不存在\n";
+        return;
+    }
+
+    // 验证学生是否选修了该课程
+    if (!course->hasStudent(studentID)) {
+        cout << "错误：该学生没有选择这门课程，无法录入成绩。\n";
+        return;
+    }
+
+    int score = getIntInput("请输入成绩(0-100): ");
+    if (score < 0 || score > 100) {
+        cout << "错误：成绩必须在0到100之间，请重新输入。\n";
+        return;
+    }
+
+    if (getConfirmation("确定要为学生 " + student->m_name + " 的课程 " + course->m_courseName + " 导入成绩 " + std::to_string(score) + " 吗？")) {
+        teacher->importScore(course, studentID, score);
+        cout << "成绩导入成功！\n";
+    } else {
+        cout << "已取消成绩导入操作。\n";
+    }
+}
 
 // CourseMenu方法实现
 void CourseMenu::display() {
