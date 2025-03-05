@@ -89,3 +89,8 @@ shared_ptr<Teacher> System::findTeacher(const string& name) {
     }
     return nullptr;
 }
+
+//委托给Teacher类处理课程展示
+void System::showCoursesForTeacher(const Teacher& teacher) {
+    teacher.viewCourses(m_courses);
+}

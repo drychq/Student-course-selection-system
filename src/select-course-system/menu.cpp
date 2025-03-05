@@ -259,7 +259,7 @@ void TeacherMenu::execute(System& system) {
         importScore(system);
         break;
     case 3:
-        //viewCourses(system);
+        viewCourses(system);
         break;
     case 4:
         return;
@@ -339,6 +339,16 @@ void TeacherMenu::importScore(System& system) {
     }
 }
 
+void TeacherMenu::viewCourses(System& system) {
+    string teacherName = getStringInput("输入教师姓名: ");
+    auto teacher = system.findTeacher(teacherName);
+    if (teacher) {
+        system.showCoursesForTeacher(*teacher);
+    } else {
+        cout << "未找到教师。\n";
+    }
+}
+
 // CourseMenu方法实现
 void CourseMenu::display() {
     cout << "\n--- 课程管理 ---\n";
@@ -355,7 +365,7 @@ void CourseMenu::execute(System& system) {
         addCourse(system);
         break;
     case 2:
-        //courseStatistics(system);TODO
+        courseStatistics(system);
         break;
     case 3:
         return;
@@ -399,6 +409,17 @@ void CourseMenu::addCourse(System& system) {
     }
 }
 
+void CourseMenu::courseStatistics(System& system) {
+    int courseID = getIntInput("输入课程ID: ");
+    if (courseID == -1) return;
+
+    auto course = system.findCourse(courseID);
+    if (course) {
+        course->showStatistics();
+    } else {
+        cout << "未找到课程。\n";
+    }
+}
 
 // DataMenu方法实现
 void DataMenu::display() {
@@ -413,10 +434,10 @@ void DataMenu::execute(System& system) {
     int choice = getIntInput("");
     switch (choice) {
     case 1:
-        //saveData(system);TODO
+        saveData(system);
         break;
     case 2:
-        //loadData(system);TODO
+        loadData(system);
         break;
     case 3:
         return;
@@ -425,4 +446,10 @@ void DataMenu::execute(System& system) {
     }
 }
 
+void DataMenu::loadData(System &system) {
+    //TODO
+}
 
+void DataMenu::saveData(System& system) {
+    //TODO
+}

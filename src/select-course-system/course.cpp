@@ -1,9 +1,12 @@
 #include "course.h"
+#include <iomanip>
 #include <iostream>
 
 using std::string;
 using std::cout;
 using std::endl;
+using std::fixed;
+using std::setprecision;
 
 Course::Course(const string& name, int id, const string& desc)
     : m_courseName(name), m_courseID(id), m_description(desc) {
@@ -26,6 +29,11 @@ void Course::addStudent(int studentID) {
 //O(n)复杂度的查询接口，n为选课人数
 bool Course::hasStudent(int studentID) const {
     return findStudentIndex(studentID) != -1;
+}
+
+//直接返回容器大小，O(1)复杂度
+size_t Course::getStudentCount() const{
+    return m_studentIDs.size();
 }
 
 //线性查找学生ID，因为选课人数通常较少，复杂度可接受
@@ -68,4 +76,84 @@ void Course::importScore(int studentID, int score) {
 int Course::getScore(int studentID) const {
     int index = findStudentIndex(studentID);
     return index != -1 ? m_scores[index] : -1;
+}
+
+//统计已评分人数，用于计算平均分等统计数据
+int Course::calculateGradedCount() const {
+    int count = 0;
+    for (int score : m_scores) {
+        if (score != -1) {
+            count++;
+        }
+    }
+    return count;
+}
+
+//计算平均分，处理无成绩的特殊情况
+double Course::calculateAverageScore() const {
+    int gradedCount = calculateGradedCount();
+    if (gradedCount == 0) {
+        return 0.0;
+    }
+
+    double sum = 0.0;
+    for (int score : m_scores) {
+        if (score != -1) {
+            sum += score;
+        }
+    }
+
+    return sum / gradedCount;
+}
+
+//计算最高分，处理无成绩的特殊情况
+int Course::calculateHighestScore() const {
+    if (calculateGradedCount() == 0) {
+        return 0;
+    }
+
+    int highest = -1;
+    for (int score : m_scores) {
+        if (score != -1 && (highest == -1 || score > highest)) {
+            highest = score;
+        }
+    }
+
+    return highest;
+}
+
+//计算最低分，处理无成绩的特殊情况
+int Course::calculateLowestScore() const {
+    if (calculateGradedCount() == 0) {
+        return 0;
+    }
+
+    int lowest = 101;
+    for (int score : m_scores) {
+        if (score != -1 && score < lowest) {
+            lowest = score;
+        }
+    }
+
+    return lowest;
+}
+
+//格式化显示课程统计信息，使用setprecision控制小数位数
+void Course::showStatistics() const {
+    cout << "课程 \"" << m_courseName << "\" (ID: " << m_courseID << ") 统计信息：" << endl;
+    cout << "----------------------------------------" << endl;
+    cout << "选课人数：" << getStudentCount() << endl;
+
+    int gradedCount = calculateGradedCount();
+    cout << "已评分人数：" << gradedCount << endl;
+
+    if (gradedCount > 0) {
+        cout << "平均分：" << fixed << setprecision(2) << calculateAverageScore() << endl;
+        cout << "最高分：" << calculateHighestScore() << endl;
+        cout << "最低分：" << calculateLowestScore() << endl;
+    } else {
+        cout << "暂无成绩数据" << endl;
+    }
+
+    cout << "----------------------------------------" << endl;
 }
