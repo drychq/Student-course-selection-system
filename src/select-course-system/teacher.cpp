@@ -1,3 +1,6 @@
 #include "teacher.h"
 
-Teacher::Teacher() {}
+using std::string;
+
+Teacher::Teacher(const string& name) : m_name(name) {
+}

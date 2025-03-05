@@ -1,8 +1,8 @@
 #include "course.h"
 
-Course::Course() {}
+using std::string;
 
-Course::Course(const std::string &name, int id, const std::string &desc)
-{
-
+Course::Course(const string& name, int id, const string& desc)
+    : m_courseName(name), m_courseID(id), m_description(desc) {
 }
+
