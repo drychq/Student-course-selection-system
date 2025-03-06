@@ -447,9 +447,26 @@ void DataMenu::execute(System& system) {
 }
 
 void DataMenu::loadData(System &system) {
-    //TODO
+    string dirname = getStringInput("输入要加载的数据目录名称: ");
+    if (dirname.empty()) return;
+
+    // 提醒用户数据加载会覆盖当前数据
+    if (getConfirmation("确定要从目录 \"" + dirname + "\" 加载数据吗？这将覆盖当前所有数据！")) {
+        system.loadData(dirname);
+        cout << "数据加载成功！\n";
+    } else {
+        cout << "已取消加载数据操作。\n";
+    }
 }
 
 void DataMenu::saveData(System& system) {
-    //TODO
+    string dirname = getStringInput("输入要保存的数据目录名称: ");
+    if (dirname.empty()) return;
+
+    if (getConfirmation("确定要将数据保存到目录 \"" + dirname + "\" 吗？")) {
+        system.saveData(dirname);
+        cout << "数据保存成功！\n";
+    } else {
+        cout << "已取消保存数据操作。\n";
+    }
 }

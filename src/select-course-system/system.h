@@ -8,7 +8,8 @@
 
 #include <memory>
 #include <string>
-
+#include <filesystem>
+#include <fstream>
 
 //前向声明
 class Menu;
@@ -47,11 +48,36 @@ public:
     //工具函数
     int stringToInt(const std::string& str);
 
+    //数据持久化接口，支持系统数据的保存和恢复
+    void saveData(const std::string& dirname);
+    void loadData(const std::string& dirname);
+
 private:
     //使用智能指针管理所有实体对象，确保资源自动释放
     std::vector<std::shared_ptr<Student>> m_students;
     std::vector<std::shared_ptr<Teacher>> m_teachers;
     std::vector<std::shared_ptr<Course>> m_courses;
     bool m_running;  //系统运行状态标志
+
+    //文件操作辅助函数
+    void ensureDirectoryExists(const std::string& dirname);
+    std::vector<std::string> parseLine(const std::string& line);
+
+    //数据持久化相关函数
+    void saveStudentData(const std::string& filename);
+    void saveTeacherData(const std::string& filename);
+    void saveCourseData(const std::string& filename);
+    void saveStudentCourseData(const std::string& filename);
+    void saveScoreData(const std::string& filename);
+
+    void loadStudentData(const std::string& filename);
+    void loadTeacherData(const std::string& filename);
+    void loadCourseData(const std::string& filename);
+    void loadStudentCourseData(const std::string& filename);
+    void loadScoreData(const std::string& filename);
+
+    //文件IO工具函数
+    bool openFileForWrite(std::ofstream& file, const std::string& filename);
+    bool openFileForRead(std::ifstream& file, const std::string& filename);
 
 };
