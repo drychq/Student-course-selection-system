@@ -1,41 +1,83 @@
 #pragma once
 
+
 #include "student.h"
 #include "teacher.h"
 #include "course.h"
-#include <vector>
-#include <memory>
-#include <sqlite3.h>
+#include "menu.h"
 
-class System {
+#include <memory>
+#include <string>
+#include <filesystem>
+#include <fstream>
+
+//前向声明
+class Menu;
+
+//系统类作为整个应用的核心控制器
+class System
+{
 public:
+    //默认构造函数，初始化系统运行状态
+    System() : m_running(true) {}
+
+    //实体管理接口，负责对象的创建和生命周期管理
     void addStudent(const std::string& name, int id);
     void addTeacher(const std::string& name);
     void addCourse(const std::string& name, int id, const std::string& desc);
 
+    //查找接口，O(n)复杂度，返回智能指针避免悬垂引用
     std::shared_ptr<Student> findStudent(int id);
     std::shared_ptr<Teacher> findTeacher(const std::string& name);
     std::shared_ptr<Course> findCourse(int id);
 
+    //用户界面和系统控制
     void userInterface();
-    void saveData(const std::string& dbname);
-    void loadData(const std::string& dbname);
+    void setRunning(bool running) { m_running = running; }
+    void stop() { m_running = false; }
+    bool isRunning() const { return m_running; }
 
-    void addStudentUI();
-    void addTeacherUI();
-    void addCourseUI();
-    void studentSelectCourseUI();
-    void teacherImportScoreUI();
-    void studentViewScoresUI();
-    void studentViewCoursesUI();
-    void teacherViewCoursesUI();
-    void saveDataUI();
-    void loadDataUI();
+
+    //教师课程管理接口
+    void showCoursesForTeacher(const Teacher& teacher);
+
+    //数据访问接口，返回引用以支持修改
+    std::vector<std::shared_ptr<Student>>& getStudents() { return m_students; }
+    std::vector<std::shared_ptr<Course>>& getCourses() { return m_courses; }
+
+    //工具函数
+    int stringToInt(const std::string& str);
+
+    //数据持久化接口，支持系统数据的保存和恢复
+    void saveData(const std::string& dirname);
+    void loadData(const std::string& dirname);
 
 private:
-    std::vector<std::shared_ptr<Student>> _students;
-    std::vector<std::shared_ptr<Teacher>> _teachers;
-    std::vector<std::shared_ptr<Course>> _courses;
+    //使用智能指针管理所有实体对象，确保资源自动释放
+    std::vector<std::shared_ptr<Student>> m_students;
+    std::vector<std::shared_ptr<Teacher>> m_teachers;
+    std::vector<std::shared_ptr<Course>> m_courses;
+    bool m_running;  //系统运行状态标志
+
+    //文件操作辅助函数
+    void ensureDirectoryExists(const std::string& dirname);
+    std::vector<std::string> parseLine(const std::string& line);
+
+    //数据持久化相关函数
+    void saveStudentData(const std::string& filename);
+    void saveTeacherData(const std::string& filename);
+    void saveCourseData(const std::string& filename);
+    void saveStudentCourseData(const std::string& filename);
+    void saveScoreData(const std::string& filename);
+
+    void loadStudentData(const std::string& filename);
+    void loadTeacherData(const std::string& filename);
+    void loadCourseData(const std::string& filename);
+    void loadStudentCourseData(const std::string& filename);
+    void loadScoreData(const std::string& filename);
+
+    //文件IO工具函数
+    bool openFileForWrite(std::ofstream& file, const std::string& filename);
+    bool openFileForRead(std::ifstream& file, const std::string& filename);
+
 };
-
-

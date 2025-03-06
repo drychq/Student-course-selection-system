@@ -1,460 +1,389 @@
+
 #include "system.h"
-#include <iostream>
-#include <sstream>
-#include <limits>
-#include <sqlite3.h>
 
-// Helper function to execute SQL statement with error checking
-bool executeSQL(sqlite3* db, const std::string& sql) {
-    char* errMsg = nullptr;
-    int rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errMsg);
-    if (rc != SQLITE_OK) {
-        std::cerr << "SQL error: " << errMsg << "\n";
-        sqlite3_free(errMsg);
-        return false;
+using std::string;
+using std::make_shared;
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::shared_ptr;
+using std::vector;
+using std::ifstream;
+using std::ofstream;
+using std::stringstream;
+using std::filesystem::path;
+using std::filesystem::create_directories;
+using std::filesystem::exists;
+
+//数据文件名常量，便于统一管理
+inline const std::string studentsFileName = "/students.txt";
+inline const std::string teachersFileName = "/teachers.txt";
+inline const std::string coursesFileName = "/courses.txt";
+inline const std::string studentCoursesFileName = "/student_courses.txt";
+inline const std::string scoresFileName = "/scores.txt";
+
+
+
+//创建主菜单并进入事件循环
+void System::userInterface() {
+    MainMenu mainMenu;
+    while (m_running) {
+        mainMenu.display();
+        mainMenu.execute(*this);
     }
-    return true;
 }
 
-// Helper function to prepare SQL statement with error checking
-bool prepareSQL(sqlite3* db, const std::string& sql, sqlite3_stmt** stmt) {
-    int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, stmt, nullptr);
-    if (rc != SQLITE_OK) {
-        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
-        return false;
+//添加学生时检查ID唯一性，确保数据一致性
+void System::addStudent(const string& name, int id) {
+    for (const auto& student : m_students) {
+        if (student->m_studentID == id) {
+            cerr << "错误：学生ID " << id << " 已存在，不能重复添加。" << endl;
+            return;
+        }
     }
-    return true;
+
+    auto newStudent = make_shared<Student>(name, id);
+    m_students.push_back(newStudent);
+
+    cout << "成功添加学生：" << name << "（ID: " << id << "）" << endl;
 }
 
-void System::addStudent(const std::string& name, int id) {
-    _students.push_back(std::make_shared<Student>(name, id));
+//添加课程时检查ID唯一性，确保数据一致性
+void System::addCourse(const string& name, int id, const string& desc) {
+    for (const auto& course : m_courses) {
+        if (course->m_courseID == id) {
+            cerr << "错误：课程ID " << id << " 已存在，无法添加重复ID的课程。" << endl;
+            return;
+        }
+    }
+
+    auto course = make_shared<Course>(name, id, desc);
+    m_courses.push_back(course);
+
+    cout << "成功添加课程：" << name << "（ID: " << id << "）" << endl;
 }
 
-void System::addTeacher(const std::string& name) {
-    _teachers.push_back(std::make_shared<Teacher>(name));
+//添加教师时检查姓名唯一性，避免混淆
+void System::addTeacher(const string& name) {
+    for (const auto& teacher : m_teachers) {
+        if (teacher->m_name == name) {
+            cerr << "错误：教师 \"" << name << "\" 已存在，无法添加同名教师。" << endl;
+            return;
+        }
+    }
+
+    auto newTeacher = make_shared<Teacher>(name);
+    m_teachers.push_back(newTeacher);
+    cout << "成功添加教师：" << name << endl;
 }
 
-void System::addCourse(const std::string& name, int id, const std::string& desc) {
-    _courses.push_back(std::make_shared<Course>(name, id, desc));
-}
-
-std::shared_ptr<Student> System::findStudent(int id) {
-    for (const auto& student : _students) {
-        if (student->getStudentID() == id) {
+//O(n)复杂度的查找接口，返回智能指针避免悬垂引用
+shared_ptr<Student> System::findStudent(int id) {
+    for (const auto& student : m_students) {
+        if (student->m_studentID == id) {
             return student;
         }
     }
     return nullptr;
 }
 
-std::shared_ptr<Teacher> System::findTeacher(const std::string& name) {
-    for (const auto& teacher : _teachers) {
-        if (teacher->getName() == name) {
-            return teacher;
-        }
-    }
-    return nullptr;
-}
-
-std::shared_ptr<Course> System::findCourse(int id) {
-    for (const auto& course : _courses) {
-        if (course->getCourseID() == id) {
+//O(n)复杂度的查找接口，返回智能指针避免悬垂引用
+shared_ptr<Course> System::findCourse(int id) {
+    for (const auto& course : m_courses) {
+        if (course->m_courseID == id) {
             return course;
         }
     }
     return nullptr;
 }
 
-
-
-// Helper function to clear input stream
-void clearInput() {
-    std::cin.clear();
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-}
-
-void System::addStudentUI() {
-    std::string name;
-    int id;
-    std::cout << "Enter student name: ";
-    std::cin >> name;
-    std::cout << "Enter student ID: ";
-    std::cin >> id;
-    if (std::cin.fail()) {
-        std::cout << "Invalid ID. Please enter a valid number.\n";
-        clearInput();
-        return;
-    }
-    addStudent(name, id);
-}
-
-void System::addTeacherUI() {
-    std::string name;
-    std::cout << "Enter teacher name: ";
-    std::cin >> name;
-    addTeacher(name);
-}
-
-void System::addCourseUI() {
-    std::string name, desc;
-    int id;
-    std::cout << "Enter course name: ";
-    std::cin >> name;
-    std::cout << "Enter course ID: ";
-    std::cin >> id;
-    if (std::cin.fail()) {
-        std::cout << "Invalid ID. Please enter a valid number.\n";
-        clearInput();
-        return;
-    }
-    std::cin.ignore();
-    std::cout << "Enter course description: ";
-    std::getline(std::cin, desc);
-    addCourse(name, id, desc);
-}
-
-void System::studentSelectCourseUI() {
-    int studentID, courseID;
-    std::cout << "Enter student ID: ";
-    std::cin >> studentID;
-    if (std::cin.fail()) {
-        std::cout << "Invalid student ID. Please enter a valid number.\n";
-        clearInput();
-        return;
-    }
-    std::cout << "Enter course ID: ";
-    std::cin >> courseID;
-    if (std::cin.fail()) {
-        std::cout << "Invalid course ID. Please enter a valid number.\n";
-        clearInput();
-        return;
-    }
-    auto student = findStudent(studentID);
-    auto course = findCourse(courseID);
-    if (student && course) {
-        student->selectCourse(course);
-    } else {
-        std::cout << "Student or Course not found.\n";
-    }
-}
-
-void System::teacherImportScoreUI() {
-    std::string teacherName;
-    int studentID, courseID, score;
-    std::cout << "Enter teacher name: ";
-    std::cin >> teacherName;
-    std::cout << "Enter course ID: ";
-    std::cin >> courseID;
-    if (std::cin.fail()) {
-        std::cout << "Invalid course ID. Please enter a valid number.\n";
-        clearInput();
-        return;
-    }
-    std::cout << "Enter student ID: ";
-    std::cin >> studentID;
-    if (std::cin.fail()) {
-        std::cout << "Invalid student ID. Please enter a valid number.\n";
-        clearInput();
-        return;
-    }
-    std::cout << "Enter score: ";
-    std::cin >> score;
-    if (std::cin.fail()) {
-        std::cout << "Invalid score. Please enter a valid number.\n";
-        clearInput();
-        return;
-    }
-    auto teacher = findTeacher(teacherName);
-    auto course = findCourse(courseID);
-    if (teacher && course) {
-        teacher->importScore(course, studentID, score);
-    } else {
-        std::cout << "Teacher or Course not found.\n";
-    }
-}
-
-void System::studentViewScoresUI() {
-    int studentID;
-    std::cout << "Enter student ID: ";
-    std::cin >> studentID;
-    if (std::cin.fail()) {
-        std::cout << "Invalid student ID. Please enter a valid number.\n";
-        clearInput();
-        return;
-    }
-    auto student = findStudent(studentID);
-    if (student) {
-        student->viewScores();
-    } else {
-        std::cout << "Student not found.\n";
-    }
-}
-
-void System::studentViewCoursesUI() {
-    int studentID;
-    std::cout << "Enter student ID: ";
-    std::cin >> studentID;
-    if (std::cin.fail()) {
-        std::cout << "Invalid student ID. Please enter a valid number.\n";
-        clearInput();
-        return;
-    }
-    auto student = findStudent(studentID);
-    if (student) {
-        student->viewCourses();
-    } else {
-        std::cout << "Student not found.\n";
-    }
-}
-
-void System::teacherViewCoursesUI() {
-    std::string teacherName;
-    std::cout << "Enter teacher name: ";
-    std::cin >> teacherName;
-    auto teacher = findTeacher(teacherName);
-    if (teacher) {
-        teacher->viewCourses(_courses);
-    } else {
-        std::cout << "Teacher not found.\n";
-    }
-}
-
-void System::saveDataUI() {
-    std::string dbname;
-    std::cout << "Enter database name to save data: ";
-    std::cin >> dbname;
-    saveData(dbname);
-}
-
-void System::loadDataUI() {
-    std::string dbname;
-    std::cout << "Enter database name to load data: ";
-    std::cin >> dbname;
-    loadData(dbname);
-}
-
-void System::userInterface() {
-    while (true) {
-        std::cout << "\n--- Course Selection System ---\n";
-        std::cout << "1. Add Student\n";
-        std::cout << "2. Add Teacher\n";
-        std::cout << "3. Add Course\n";
-        std::cout << "4. Student Select Course\n";
-        std::cout << "5. Teacher Import Score\n";
-        std::cout << "6. Student View Scores\n";
-        std::cout << "7. Student View Courses\n";
-        std::cout << "8. Teacher View Courses\n";
-        std::cout << "9. Save Data\n";
-        std::cout << "10. Load Data\n";
-        std::cout << "11. Exit\n";
-        std::cout << "Enter your choice: ";
-
-        int choice;
-        std::cin >> choice;
-        if (std::cin.fail()) {
-            std::cout << "Invalid choice. Please enter a number between 1 and 11.\n";
-            clearInput();
-            continue;
-        }
-
-        switch (choice) {
-        case 1:
-            addStudentUI();
-            break;
-        case 2:
-            addTeacherUI();
-            break;
-        case 3:
-            addCourseUI();
-            break;
-        case 4:
-            studentSelectCourseUI();
-            break;
-        case 5:
-            teacherImportScoreUI();
-            break;
-        case 6:
-            studentViewScoresUI();
-            break;
-        case 7:
-            studentViewCoursesUI();
-            break;
-        case 8:
-            teacherViewCoursesUI();
-            break;
-        case 9:
-            saveDataUI();
-            break;
-        case 10:
-            loadDataUI();
-            break;
-        case 11:
-            return;
-        default:
-            std::cout << "Invalid choice. Try again.\n";
+//O(n)复杂度的查找接口，使用姓名作为唯一标识
+shared_ptr<Teacher> System::findTeacher(const string& name) {
+    for (const auto& teacher : m_teachers) {
+        if (teacher->m_name == name) {
+            return teacher;
         }
     }
+    return nullptr;
 }
 
-void System::saveData(const std::string& dbname) {
-    sqlite3* db;
-    int rc = sqlite3_open(dbname.c_str(), &db);
-    if (rc) {
-        std::cerr << "Can't open database: " << sqlite3_errmsg(db) << "\n";
-        return;
-    }
-
-    const char* createTablesSQL =
-        "CREATE TABLE IF NOT EXISTS Students (ID INT PRIMARY KEY NOT NULL, Name TEXT NOT NULL);"
-        "CREATE TABLE IF NOT EXISTS Teachers (Name TEXT PRIMARY KEY NOT NULL);"
-        "CREATE TABLE IF NOT EXISTS Courses (ID INT PRIMARY KEY NOT NULL, Name TEXT NOT NULL, Description TEXT NOT NULL);"
-        "CREATE TABLE IF NOT EXISTS Enrollments (StudentID INT NOT NULL, CourseID INT NOT NULL, Score INT, PRIMARY KEY (StudentID, CourseID));";
-
-    if (!executeSQL(db, createTablesSQL)) {
-        sqlite3_close(db);
-        return;
-    }
-
-    sqlite3_exec(db, "BEGIN TRANSACTION;", 0, 0, 0);
-
-    sqlite3_stmt* stmt;
-
-    const char* insertStudentSQL = "INSERT OR REPLACE INTO Students (ID, Name) VALUES (?, ?);";
-    if (!prepareSQL(db, insertStudentSQL, &stmt)) {
-        sqlite3_close(db);
-        return;
-    }
-    for (const auto& student : _students) {
-        sqlite3_bind_int(stmt, 1, student->getStudentID());
-        sqlite3_bind_text(stmt, 2, student->getName().c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_step(stmt);
-        sqlite3_reset(stmt);
-
-        const auto& courses = student->getCourses();
-        const char* insertEnrollmentSQL = "INSERT OR REPLACE INTO Enrollments (StudentID, CourseID, Score) VALUES (?, ?, ?);";
-        sqlite3_stmt* enrollStmt;
-        if (!prepareSQL(db, insertEnrollmentSQL, &enrollStmt)) {
-            sqlite3_finalize(stmt);
-            sqlite3_close(db);
-            return;
-        }
-
-        for (const auto& course : courses) {
-            int score = course->getScore(student->getStudentID());
-            sqlite3_bind_int(enrollStmt, 1, student->getStudentID());
-            sqlite3_bind_int(enrollStmt, 2, course->getCourseID());
-            if (score == -1) {
-                sqlite3_bind_null(enrollStmt, 3);
-            } else {
-                sqlite3_bind_int(enrollStmt, 3, score);
-            }
-            sqlite3_step(enrollStmt);
-            sqlite3_reset(enrollStmt);
-        }
-        sqlite3_finalize(enrollStmt);
-    }
-    sqlite3_finalize(stmt);
-
-    const char* insertTeacherSQL = "INSERT OR REPLACE INTO Teachers (Name) VALUES (?);";
-    if (!prepareSQL(db, insertTeacherSQL, &stmt)) {
-        sqlite3_close(db);
-        return;
-    }
-    for (const auto& teacher : _teachers) {
-        sqlite3_bind_text(stmt, 1, teacher->getName().c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_step(stmt);
-        sqlite3_reset(stmt);
-    }
-    sqlite3_finalize(stmt);
-
-    const char* insertCourseSQL = "INSERT OR REPLACE INTO Courses (ID, Name, Description) VALUES (?, ?, ?);";
-    if (!prepareSQL(db, insertCourseSQL, &stmt)) {
-        sqlite3_close(db);
-        return;
-    }
-    for (const auto& course : _courses) {
-        sqlite3_bind_int(stmt, 1, course->getCourseID());
-        sqlite3_bind_text(stmt, 2, course->getCourseName().c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_bind_text(stmt, 3, course->getDescription().c_str(), -1, SQLITE_TRANSIENT);
-        sqlite3_step(stmt);
-        sqlite3_reset(stmt);
-    }
-    sqlite3_finalize(stmt);
-
-    sqlite3_exec(db, "COMMIT;", 0, 0, 0);
-    sqlite3_close(db);
+//委托给Teacher类处理课程展示
+void System::showCoursesForTeacher(const Teacher& teacher) {
+    teacher.viewCourses(m_courses);
 }
 
-void System::loadData(const std::string& dbname) {
-    sqlite3* db;
-    int rc = sqlite3_open(dbname.c_str(), &db);
-    if (rc) {
-        std::cerr << "Can't open database: " << sqlite3_errmsg(db) << "\n";
-        return;
+//确保数据目录存在，创建不存在的目录
+void System::ensureDirectoryExists(const string& dirname) {
+    path dir(dirname);
+    if (!exists(dir)) {
+        create_directories(dir);
+        cout << "创建目录：" << dirname << endl;
+    }
+}
+
+//使用逗号分隔字符串，支持数据的序列化和反序列化
+vector<string> System::parseLine(const string& line) {
+    vector<string> result;
+    stringstream ss(line);
+    string item;
+
+    while (std::getline(ss, item, ',')) {
+        result.push_back(item);
     }
 
-    _students.clear();
-    _teachers.clear();
-    _courses.clear();
+    return result;
+}
 
-    sqlite3_stmt* stmt;
+//字符串转整数，处理转换异常
+int System::stringToInt(const string& str) {
+    int result = 0;
+    stringstream ss(str);
 
-    const char* selectStudentsSQL = "SELECT ID, Name FROM Students;";
-    if (!prepareSQL(db, selectStudentsSQL, &stmt)) {
-        sqlite3_close(db);
-        return;
+    if (!(ss >> result)) {
+        cerr << "错误：无法将字符串 \"" << str << "\" 转换为整数！" << endl;
+        return 0;
     }
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        int id = sqlite3_column_int(stmt, 0);
-        const char* name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        _students.push_back(std::make_shared<Student>(name, id));
-    }
-    sqlite3_finalize(stmt);
 
-    const char* selectTeachersSQL = "SELECT Name FROM Teachers;";
-    if (!prepareSQL(db, selectTeachersSQL, &stmt)) {
-        sqlite3_close(db);
-        return;
+    char remaining;
+    if (ss >> remaining) {
+        cerr << "警告：字符串 \"" << str << "\" 包含非数字字符，只转换了开头的数字部分。" << endl;
     }
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        const char* name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
-        _teachers.push_back(std::make_shared<Teacher>(name));
-    }
-    sqlite3_finalize(stmt);
 
-    const char* selectCoursesSQL = "SELECT ID, Name, Description FROM Courses;";
-    if (!prepareSQL(db, selectCoursesSQL, &stmt)) {
-        sqlite3_close(db);
-        return;
-    }
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        int id = sqlite3_column_int(stmt, 0);
-        const char* name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
-        const char* desc = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
-        _courses.push_back(std::make_shared<Course>(name, id, desc));
-    }
-    sqlite3_finalize(stmt);
+    return result;
+}
 
-    const char* selectEnrollmentsSQL = "SELECT StudentID, CourseID, Score FROM Enrollments;";
-    if (!prepareSQL(db, selectEnrollmentsSQL, &stmt)) {
-        sqlite3_close(db);
-        return;
+//文件打开失败时返回false，允许调用者处理错误
+bool System::openFileForWrite(ofstream& ofs, const string& filename) {
+    ofs.open(filename);
+    if (!ofs) {
+        cerr << "无法打开文件进行写入: " << filename << endl;
+        return false;
     }
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        int studentID = sqlite3_column_int(stmt, 0);
-        int courseID = sqlite3_column_int(stmt, 1);
-        int score = sqlite3_column_type(stmt, 2) == SQLITE_NULL ? -1 : sqlite3_column_int(stmt, 2);
+    return true;
+}
 
-        auto student = findStudent(studentID);
-        auto course = findCourse(courseID);
-        if (student && course) {
-            student->selectCourse(course);
-            if (score != -1) {
-                course->importScore(studentID, score);
+//文件打开失败时返回false，但不中断程序执行
+bool System::openFileForRead(ifstream& ifs, const string& filename) {
+    ifs.open(filename);
+    if (!ifs) {
+        cerr << "警告：无法打开文件进行读取: " << filename << endl;
+        return false;
+    }
+    return true;
+}
+
+//保存学生基本信息，格式：姓名,ID
+void System::saveStudentData(const string& filename) {
+    ofstream ofs;
+    if (!openFileForWrite(ofs, filename)) return;
+
+    for (const auto& student : m_students) {
+        ofs << student->m_name << "," << student->m_studentID << endl;
+    }
+    ofs.close();
+    cout << "学生数据已保存到 " << filename << endl;
+}
+
+//保存教师信息，每行一个姓名
+void System::saveTeacherData(const string& filename) {
+    ofstream ofs;
+    if (!openFileForWrite(ofs, filename)) return;
+
+    for (const auto& teacher : m_teachers) {
+        ofs << teacher->m_name << endl;
+    }
+    ofs.close();
+    cout << "教师数据已保存到 " << filename << endl;
+}
+
+//保存课程信息，格式：名称,ID,描述
+void System::saveCourseData(const std::string& filename) {
+    ofstream ofs;
+    if (!openFileForWrite(ofs, filename)) return;
+
+    for (const auto& course : m_courses) {
+        ofs << course->m_courseName << ","
+            << course->m_courseID << ","
+            << course->m_description << endl;
+    }
+    ofs.close();
+    cout << "课程数据已保存到 " << filename << endl;
+}
+
+//保存选课关系，格式：学生ID,课程ID
+void System::saveStudentCourseData(const string& filename) {
+    ofstream ofs;
+    if (!openFileForWrite(ofs, filename)) return;
+
+    for (const auto& student : m_students) {
+        for (const auto& course : student->m_enrolledCourses) {
+            ofs << student->m_studentID << "," << course->m_courseID << endl;
+        }
+    }
+    ofs.close();
+    cout << "学生选课数据已保存到 " << filename << endl;
+}
+
+//保存成绩信息，格式：课程ID,学生ID,成绩
+void System::saveScoreData(const string& filename) {
+    ofstream ofs;
+    if (!openFileForWrite(ofs, filename)) return;
+
+    for (const auto& course : m_courses) {
+        for (const auto& student : m_students) {
+            int score = course->getScore(student->m_studentID);
+            if (score >= 0) {
+                ofs << course->m_courseID << ","
+                    << student->m_studentID << ","
+                    << score << endl;
             }
         }
     }
-    sqlite3_finalize(stmt);
+    ofs.close();
+    cout << "成绩数据已保存到 " << filename << endl;
+}
 
-    sqlite3_close(db);
+//加载学生数据，忽略空行和格式错误的行
+void System::loadStudentData(const string& filename) {
+    ifstream ifs;
+    if (!openFileForRead(ifs, filename)) return;
+
+    string line;
+    while (getline(ifs, line)) {
+        if (line.empty()) continue;
+
+        vector<string> fields = parseLine(line);
+        if (fields.size() >= 2) {
+            string name = fields[0];
+            int id = stringToInt(fields[1]);
+            addStudent(name, id);
+        }
+    }
+    ifs.close();
+    cout << "已加载学生数据" << endl;
+}
+
+//加载教师数据，忽略空行
+void System::loadTeacherData(const string& filename) {
+    ifstream ifs;
+    if (!openFileForRead(ifs, filename)) return;
+
+    string line;
+    while (getline(ifs, line)) {
+        if (!line.empty()) {
+            addTeacher(line);
+        }
+    }
+    ifs.close();
+    cout << "已加载教师数据" << endl;
+}
+
+//加载课程数据，忽略空行和格式错误的行
+void System::loadCourseData(const string& filename) {
+    ifstream ifs;
+    if (!openFileForRead(ifs, filename)) return;
+
+    string line;
+    while (getline(ifs, line)) {
+        if (line.empty()) continue;
+
+        vector<string> fields = parseLine(line);
+        if (fields.size() >= 3) {
+            string name = fields[0];
+            int id = stringToInt(fields[1]);
+            string desc = fields[2];
+            addCourse(name, id, desc);
+        }
+    }
+    ifs.close();
+    cout << "已加载课程数据" << endl;
+}
+
+//加载选课关系，重建学生和课程的双向关联
+void System::loadStudentCourseData(const string& filename) {
+    ifstream ifs;
+    if (!openFileForRead(ifs, filename)) return;
+
+    string line;
+    int successCount = 0;
+
+    while (getline(ifs, line)) {
+        if (line.empty()) continue;
+
+        vector<string> fields = parseLine(line);
+        if (fields.size() >= 2) {
+            int studentID = stringToInt(fields[0]);
+            int courseID = stringToInt(fields[1]);
+
+            auto student = findStudent(studentID);
+            auto course = findCourse(courseID);
+
+            if (student && course) {
+                student->selectCourse(course);
+                successCount++;
+            }
+        }
+    }
+    ifs.close();
+    cout << "已加载 " << successCount << " 条选课数据" << endl;
+}
+
+//加载成绩数据，处理格式错误和异常情况
+void System::loadScoreData(const string& filename) {
+    ifstream ifs;
+    if (!openFileForRead(ifs, filename)) return;
+
+    string line;
+    int successCount = 0;
+
+    while (getline(ifs, line)) {
+        if (line.empty()) continue;
+
+        vector<string> fields = parseLine(line);
+        if (fields.size() >= 3) {
+            try {
+                int courseID = stringToInt(fields[0]);
+                int studentID = stringToInt(fields[1]);
+                int score = stringToInt(fields[2]);
+
+                auto course = findCourse(courseID);
+                if (course) {
+                    course->importScore(studentID, score);
+                    successCount++;
+                }
+            } catch (const std::exception& e) {
+                cerr << "错误：解析成绩数据时出错：" << e.what() << endl;
+            }
+        }
+    }
+    ifs.close();
+    cout << "已加载 " << successCount << " 条成绩数据" << endl;
+}
+
+//保存所有数据到指定目录
+void System::saveData(const string& dirname) {
+    ensureDirectoryExists(dirname);
+
+    saveStudentData(dirname + studentsFileName);
+    saveTeacherData(dirname + teachersFileName);
+    saveCourseData(dirname + coursesFileName);
+    saveStudentCourseData(dirname + studentCoursesFileName);
+    saveScoreData(dirname + scoresFileName);
+
+    cout << "所有数据已成功保存到 " << dirname << " 目录" << endl;
+}
+
+//加载所有数据，先清空现有数据
+void System::loadData(const string& dirname) {
+    m_students.clear();
+    m_teachers.clear();
+    m_courses.clear();
+
+    loadStudentData(dirname + studentsFileName);
+    loadTeacherData(dirname + teachersFileName);
+    loadCourseData(dirname + coursesFileName);
+    loadStudentCourseData(dirname + studentCoursesFileName);
+    loadScoreData(dirname + scoresFileName);
+
+    cout << "数据加载完成" << endl;
 }
