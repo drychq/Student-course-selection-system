@@ -11,10 +11,8 @@ add_executable(Student-course-selection-system
     src/teacher.h src/teacher.cpp
     src/course.h src/course.cpp
     src/system.h src/system.cpp
+    src/menu.h src/menu.cpp
 )
-
-find_package(SQLite3 REQUIRED)
-target_link_libraries(Student-course-selection-system PRIVATE SQLite::SQLite3)
 
 include(GNUInstallDirs)
 install(TARGETS Student-course-selection-system
