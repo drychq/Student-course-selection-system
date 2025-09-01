@@ -1,0 +1,344 @@
+                                                                        选课系统代码介绍
+                                                                 (小组成员:陈翰钦,任纹萱,唐振朗)
+
+
+    系统类 (System)
+        是一个框架或容器类，用于管理学生和教师等实体。
+    stuedns 类
+        代表学生实体。
+        属性 -studentID：唯一标识学生的ID。
+        方法 -envokedCourses：可能用于记录或获取学生已选修的课程。
+        属性 -name：教师的姓名。
+        方法 -courses：用于添加或获取教师教授的课程。
+    course 类
+        代表课程实体。
+        属性 -courseName：课程的名称。
+        方法 -course：是添加课程或获取课程信息的操作
+        方法 findStudent()：用于查找特定学生。
+        方法 findTeacher()：用于查找特定教师。
+        方法 findCourse()：用于查找特定课程
+        HerrStudent 接口
+        定义了与学生相关的操作接口。
+        方法 -hsAvailable()：返回学生的可用性状态（指学生是否在线、是否空闲等）。
+        方法 -hsDetail()：返回学生的详细信息。
+        实现了 HerrStudent 接口。
+        属性 studentId：学生的ID。
+        方法 -addStudent()：是一个添加学生到某个集合或数据库的操作
+        方法 -hsAddCourse()：用于向学生添加课程。
+        同时可以连接数据库
+
+Course
+
+1. 构造函数 Course::Course(const std::string& name, int id, const std::string& desc)
+功能：
+初始化 Course 类对象的成员变量，包括课程名称 (courseName)、课程 ID (courseID) 和课程描述 (description)。
+
+实现思路：
+该构造函数接受三个参数：课程名称、课程 ID 和描述，分别通过初始化列表赋值给类的成员变量。这样做可以提高性能并确保成员变量在对象创建时被初始化。
+
+实现细节：
+参数 name 初始化 courseName，表示课程的名称。
+参数 id 初始化 courseID，表示课程唯一标识符。
+参数 desc 初始化 description，表示课程的详细描述。
+初始化列表的使用减少了冗余代码，并保证成员变量的值在构造完成后即为有效。
+
+2. std::string Course::getCourseName() const
+功能：
+返回课程的名称 (courseName)。
+
+实现思路：
+函数使用 const 修饰，表示不会修改类的状态，从而保证该方法只读取 courseName 的值。通过直接返回成员变量的值，为外部提供课程名称信息。此函数简单、直接，主要用于课程名称的查询。
+
+3. int Course::getCourseID() const
+功能：
+返回课程的唯一标识符 (courseID)。
+
+实现思路：
+与 getCourseName 类似，该函数是一个只读的访问器。函数使用 const 修饰以确保不改变成员变量的值。直接返回 courseID，为外部调用者提供课程的唯一标识。
+
+4. std::string Course::getDescription() const
+功能：
+返回课程的描述信息 (description)。
+
+实现思路：
+此函数通过 const 修饰，提供课程的描述信息，用于显示或其他用途。实现非常直接，直接返回类成员变量 description 的值。
+
+5. void Course::addStudent(int studentID)
+
+功能：
+向课程中添加一个学生 ID，同时为该学生初始化成绩为 -1，表示未评分状态。
+
+实现思路：
+函数接收学生 ID 参数，将其添加到 studentIDs 向量中，同时在 scores 向量中增加一个与之对应的值 -1
+
+实现细节
+1. 构造函数 Course::Course(const std::string& name, int id, const std::string& desc)
+功能：
+构造函数用于初始化 Course 类的对象。它接收课程名称、课程 ID 和课程描述作为参数，并将这些值赋予对应的成员变量 courseName、courseID 和 description。
+
+实现思路：
+构造函数的主要目的是通过初始化列表为类的成员变量赋值。这种方式比在函数体内赋值更高效，因为它直接在对象内存分配时完成初始化，而无需进行二次赋值。
+courseName 被赋值为输入的 name 参数，表示课程的名称，用于标识课程内容。
+courseID 被赋值为输入的 id 参数，作为课程的唯一标识符。
+description 被赋值为输入的 desc 参数，存储课程的详细信息。
+此实现方式确保在创建 Course 对象时，相关数据完整且有效。
+
+2. std::string Course::getCourseName() const
+功能：
+返回课程名称 (courseName)，供外部调用以获取课程名。
+
+实现思路：
+该函数通过读取 courseName 成员变量的值，将课程名称作为 std::string 类型返回。使用 const 修饰函数，表明此函数不会修改对象状态（即不会改变成员变量的值），从而提高代码的安全性和可读性。
+函数非常简洁，直接通过返回 courseName 来实现功能。调用方可以通过调用此方法获知课程的名称，适合需要显示课程信息或进行日志记录的场景。
+
+3. int Course::getCourseID() const
+功能：
+返回课程 ID (courseID)，供外部使用以标识该课程。
+
+实现思路：
+课程 ID 是每个课程的唯一标识符，调用此函数可获取该标识符用于外部逻辑处理。
+函数被修饰为 const，同样保证了不会修改类的内部状态。
+返回值类型为 int，直接返回 courseID 成员变量的值。
+设计思路简单，通过提供课程的唯一 ID，可以用作数据库查询、匹配学生记录或其他与课程关联的功能。
+
+4. std::string Course::getDescription() const
+功能：
+返回课程描述 (description)，供外部获取课程的详细信息。
+
+实现思路：
+此函数设计用于为外部调用者提供课程的详细描述信息，比如课程简介或课程目标。
+description 是一个 std::string 类型的成员变量，函数直接返回它的值。
+与其他 get 方法一样，此方法也被 const 修饰，以保证函数调用不会改变对象的状态，维护对象的数据完整性。
+该函数的用途是辅助显示课程内容，可能应用于用户界面或文档生成等场景。
+
+5. void Course::addStudent(int studentID)
+功能：
+向课程中添加一名学生，并为该学生初始化成绩为未评分状态（-1）。
+
+实现思路：
+studentID 参数表示要添加学生的唯一标识符。函数将其添加到 studentIDs 列表中，表示该学生已注册此课程。
+同时，在 scores 列表中新增一项，初始化为 -1，表示该学生当前未被评分。
+函数调用了 std::vector 的 push_back 方法，将新学生的 ID 和默认成绩插入到对应的列表末尾。
+设计此函数是为了维护学生与课程的关联性，并确保每个学生初始状态下成绩未评分。
+
+6. void Course::importScore(int studentID, int score)
+功能：为指定学生导入成绩。如果学生存在于课程中，则更新其成绩；如果学生不存在，则打印错误消息。
+
+实现思路：
+首先遍历 studentIDs 列表，查找是否存在指定的 studentID。
+若找到对应学生，更新 scores 列表中该学生的成绩为输入的 score，并将标志变量 found 设为 true。
+若未找到学生 ID，则打印错误消息，包括未找到的学生 ID 和课程名称，用于提示用户输入错误或数据不完整。
+函数通过遍历确保每个学生的成绩对应正确的位置，维护数据的完整性。
+
+7. int Course::getScore(int studentID) const
+功能：
+根据学生 ID 获取其成绩。如果该学生未注册课程，则返回 -1。
+
+实现思路：
+函数遍历 studentIDs，找到与输入 studentID 匹配的项后，返回对应的成绩（scores 中的值）。
+若遍历结束未找到对应的学生 ID，则返回 -1，表示未找到该学生或成绩信息缺失。
+函数被 const 修饰，确保其调用不会改变类的状态。
+此函数的设计意图是为外部调用者提供学生成绩查询的功能，适合成绩展示或逻辑验证场景。
+
+Student
+
+1. 构造函数 Student::Student(const std::string& name, int id)
+功能：
+用于初始化 Student 类的对象。
+接收学生姓名和学生 ID 两个参数，将它们分别赋值给 name 和 studentID 成员变量。
+
+实现思路：
+构造函数采用初始化列表的方式直接为 name 和 studentID 成员变量赋值。
+name 参数表示学生的姓名，用于标识学生身份或显示其信息。
+id 参数表示学生的唯一标识符，在课程和成绩管理中用于区分不同的学生。
+这种初始化方式简洁高效，确保在对象创建时将必要的数据注入，避免出现未初始化的成员变量问题。
+
+2. int Student::getStudentID() const
+功能：
+返回学生的唯一标识符 (studentID)。
+
+实现思路：
+该函数是 Student 类的访问器，直接返回 studentID 成员变量的值，用于外部查询学生的唯一标识符。
+函数使用 const 修饰，保证函数不会修改类的状态或成员变量，符合只读访问器的设计规范。
+外部调用此函数时，可以通过学生 ID 实现学生和课程、成绩的关联，是整个学生信息管理的基础。
+
+3. std::string Student::getName() const
+功能：
+返回学生的姓名 (name)。
+
+实现思路：
+该函数是一个简单的只读访问器，直接返回 name 成员变量的值，用于外部查询学生姓名。
+函数被 const 修饰，确保不会修改类的状态。提供学生姓名信息，适用于显示、搜索或日志记录场景。
+
+4. void Student::selectCourse(std::shared_ptr<Course> course)
+功能：
+将课程添加到学生的已选课程列表中，并在课程对象中登记该学生。
+
+实现思路：
+函数接收一个指向 Course 对象的 shared_ptr 参数，表示学生所选的课程。
+首先将该课程指针添加到 enrolledCourses 列表中，记录学生选择的课程。
+调用课程对象的 addStudent 方法，将当前学生的 studentID 添加到课程的学生列表中，从而实现学生和课程的双向关联。
+使用 shared_ptr 可以保证课程对象的生命周期由多方共享，避免内存管理问题。
+
+5. void Student::viewScores() const
+功能：
+显示学生在所有已选课程中的成绩。如果课程尚未评分，显示“Not graded”。
+
+实现思路：
+遍历 enrolledCourses 列表，对每门课程调用其 getScore 方法，获取该课程中当前学生的成绩。
+如果成绩值为 -1，说明尚未评分，显示“Not graded”；否则显示具体成绩。
+使用 std::cout 将每门课程的名称和对应的成绩输出到控制台，并以学生姓名为标题。
+此函数的设计提供了一种简洁的方式供学生查看其成绩概况，同时提高了代码的用户友好性。
+
+6. void Student::viewCourses() const
+功能：显示学生已选课程的名称和描述。
+
+实现思路：
+遍历 enrolledCourses 列表，对每门课程调用其 getCourseName 和 getDescription 方法，分别获取课程名称和课程描述。
+使用 std::cout 输出课程名称和描述，并以学生姓名为标题。函数目的是为学生提供一个查看所有选课信息的接口，便于确认或展示选课结果。
+
+7. const std::vector<std::shared_ptr<Course>>& Student::getCourses() const
+功能：
+返回学生已选课程的列表。
+
+实现思路：
+函数直接返回对 enrolledCourses 向量的常量引用，确保调用者可以访问课程列表但不能修改它。
+使用 const 修饰，保证函数只读，并且返回值本身是常量引用，进一步防止列表被修改。
+此函数的主要用途是供外部逻辑（如课程管理系统）获取学生的选课信息，用于统计或分析。
+
+System
+
+1. bool executeSQL(sqlite3* db, const std::string& sql)
+功能：
+执行 SQL 语句，并检查执行过程中是否发生错误。
+
+实现思路：
+函数接受数据库指针 db 和 SQL 语句 sql。
+调用 sqlite3_exec 执行 SQL 语句，如果执行失败，则通过 errMsg 获取错误信息并输出到控制台。
+最后释放错误消息占用的内存并返回 false 表示失败，成功则返回 true。
+该函数设计为辅助其他数据库操作，简化 SQL 执行流程，增强错误处理能力。
+
+2. bool prepareSQL(sqlite3* db, const std::string& sql, sqlite3_stmt** stmt)
+功能：
+预编译 SQL 语句并检查是否成功。
+实现思路：
+接受数据库指针 db、SQL 语句 sql 和指向 sqlite3_stmt 的指针。
+使用 sqlite3_prepare_v2 函数预编译 SQL 语句。
+如果失败，则通过 sqlite3_errmsg 输出错误信息，并返回 false。
+函数返回 true 表示成功。此函数简化了 SQL 预编译逻辑，是数据库操作的基础组件。
+
+3. void System::addStudent(const std::string& name, int id)
+功能：
+添加一个学生对象到系统。实现思路：函数创建一个新的 Student 对象，并通过 std::make_shared 动态分配内存。将创建的学生对象添加到 students 向量中，记录学生数据。设计上简洁明了，为后续的学生管理提供基础。
+
+4. void System::addTeacher(const std::string& name)
+功能：
+添加一个教师对象到系统。
+
+实现思路：
+与 addStudent 类似，函数创建一个 Teacher 对象，使用智能指针管理内存。
+将教师对象存储在 teachers 向量中。此函数提供了教师数据的管理入口。
+
+5. void System::addCourse(const std::string& name, int id, const std::string& desc)
+功能：
+添加一个课程对象到系统。
+
+实现思路：
+创建一个 Course 对象，参数包括课程名称、ID 和描述。通过 std::make_shared 将对象存储在 courses 向量中。
+此函数为课程管理提供基本功能，课程数据后续可供学生和教师模块调用。
+
+6. std::shared_ptr<Student> System::findStudent(int id)
+功能：根据学生 ID 查找并返回学生对象的智能指针。
+
+实现思路：
+遍历 students 向量，逐一调用学生对象的 getStudentID 方法，与输入的 ID 进行比对。如果找到匹配的学生对象，返回其智能指针；
+如果未找到，返回 nullptr。此函数为学生查询功能提供支持。
+
+7. std::shared_ptr<Teacher> System::findTeacher(const std::string& name)
+功能：根据教师姓名查找并返回教师对象的智能指针。
+
+实现思路：
+遍历 teachers 向量，逐一比对教师姓名，返回匹配的智能指针；
+若未找到则返回 nullptr。此函数为教师查询功能提供支持。
+
+8. std::shared_ptr<Course> System::findCourse(int id)
+功能：
+根据课程 ID 查找并返回课程对象的智能指针。
+
+实现思路：
+遍历 courses 向量，逐一调用课程对象的 getCourseID 方法，与输入的 ID 进行比对。
+找到后返回智能指针，未找到则返回 nullptr。此函数在选课和成绩管理中被频繁调用。
+
+9. void System::addStudentUI()
+功能：
+通过用户交互添加学生数据。
+
+实现思路：
+提示用户输入学生姓名和 ID。如果输入 ID 时格式错误，清空输入流并提示用户重新输入。
+调用 addStudent 方法将学生添加到系统。此函数通过用户界面交互简化数据录入流程。
+
+10. void System::studentSelectCourseUI()
+功能：
+允许学生通过用户界面选择课程。
+
+实现思路：
+用户输入学生 ID 和课程 ID，验证输入是否有效。调用 findStudent 和 findCourse 方法查找对应对象。
+如果学生和课程都存在，调用学生的 selectCourse 方法实现选课操作；否则提示错误信息。
+此函数连接用户界面与系统逻辑，完成选课功能。
+
+11. void System::saveData(const std::string& dbname)
+功能：将系统数据保存到指定的 SQLite 数据库中。
+
+实现思路：
+打开指定的 SQLite 数据库，创建表结构（如 Students、Courses、Teachers 和 Enrollments）。
+遍历 students、teachers 和 courses 向量，将数据插入对应的表中。保存学生的选课记录和成绩到 Enrollments 表。
+使用事务提高写入性能，并通过错误检查保证数据完整性。该函数确保系统数据可以持久化存储，便于后续加载。
+
+12. void System::loadData(const std::string& dbname)
+功能：
+从指定的 SQLite 数据库中加载系统数据。
+
+实现思路：
+打开数据库并读取 Students、Teachers、Courses 表中的数据，创建对应对象并添加到内存向量中。
+从 Enrollments 表加载学生选课记录和成绩，调用 selectCourse 和 importScore 方法恢复系统状态。
+通过智能指针管理对象生命周期，避免内存泄漏。该函数提供了系统数据恢复功能。
+
+Teacher
+
+1. Teacher::Teacher(const std::string& name)
+功能：
+构造函数，用于初始化教师对象的姓名。
+
+实现思路：
+使用初始化列表将输入参数 name 的值赋给成员变量 name，完成对象的初始化。
+构造函数的核心是确保每个 Teacher 对象在创建时都能正确设置其姓名，便于后续的标识和操作。
+此外，std::string 类型的成员变量可以存储任意长度的字符，使教师姓名支持多样化输入。
+该函数设计简洁高效，为教师对象提供基础信息支持。
+
+2. std::string Teacher::getName() const
+功能：
+返回教师对象的姓名。
+
+实现思路：
+作为访问器函数，该方法直接返回教师的 name 成员变量值。
+函数使用 const 修饰，保证调用此函数不会修改对象状态，符合只读操作的设计规范。
+外部调用此方法时，可以获取教师的姓名信息，用于显示、查询或匹配系统中的其他数据。
+函数设计上注重数据封装，仅通过接口提供有限的信息访问能力。
+
+3. void Teacher::importScore(std::shared_ptr<Course> course, int studentID, int score)
+功能：
+允许教师为某一课程中的指定学生导入成绩。
+
+实现思路：
+函数接收三个参数：课程对象的智能指针、学生 ID 和成绩值。
+调用 Course 类中的 importScore 方法，将学生 ID 和成绩值传递给课程对象进行记录。
+通过使用 shared_ptr 共享课程对象的所有权，避免手动管理内存，同时确保课程对象在被多个模块引用时不会被意外销毁。
+此函数设计上简化了教师与课程模块的交互，使成绩录入流程高效且清晰。
+
+4. void Teacher::viewCourses(const std::vector<std::shared_ptr<Course>>& courses) const
+功能：查看教师所负责的所有课程的名称和描述。
+
+实现思路：接收一个存储课程对象的 std::vector，逐一遍历其中的课程，输出每门课程的名称和描述。
+在输出中包含教师姓名，增强界面交互的直观性。使用智能指针 shared_ptr 确保课程对象的安全访问，同时函数使用 const 修饰，保证只读操作，不会对课程数据造成修改。
+此函数为教师提供了快速查看其负责课程信息的功能，设计上注重清晰性和直观性，适用于管理场景。
+
