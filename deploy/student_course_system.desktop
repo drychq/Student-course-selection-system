@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Student Course System
+Exec=/usr/local/StudentCourseSystem/Student-course-selection-system
+Icon=/usr/local/share/icons/student_course_system.png
+Type=Application
+Categories=Education;Utility;
+Terminal=true
