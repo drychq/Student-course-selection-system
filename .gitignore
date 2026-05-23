@@ -1,0 +1,55 @@
+# Build and deploy directories
+/build/
+/deploy/
+
+# Compiled object files and binaries
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+*.out
+
+# Debug and symbols
+*.pdb
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.suo
+*.user
+*.VC.db
+
+# macOS
+.DS_Store
+
+# Windows thumbnails
+Thumbs.db
+ehthumbs.db
+
+# CMake / build system files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Misc
+*.swp
+*.bak
+~*
+
+# XMake artifacts
+build/
+.xmake/
+build/
+dist/
+
+.cache/

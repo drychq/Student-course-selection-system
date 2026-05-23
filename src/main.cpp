@@ -1,10 +1,12 @@
-#include "system.h"
+#include "frontend/cli_app.h"
+#include "persistence/file_storage.h"
+#include "service/course_selection_service.h"
 
-int main()
-{
-    System sys;
+int main() {
+    scs::CourseSelectionService service;
+    scs::FileStorage storage;
+    scs::CliApp app(service, storage);
 
-    sys.userInterface();
-
+    app.run();
     return 0;
 }
