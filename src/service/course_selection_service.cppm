@@ -1,11 +1,25 @@
-#include "service/course_selection_service.h"
+module scs.service;
 
-#include <algorithm>
-#include <cctype>
-#include <iterator>
-#include <utility>
+import std;
+import scs.domain;
+import scs.persistence;
 
 namespace scs {
+
+CourseSelectionService::CourseSelectionService(SqliteStorage& storage, StorageSnapshot snapshot)
+    : m_storage(storage),
+      m_students(std::move(snapshot.students)),
+      m_teachers(std::move(snapshot.teachers)),
+      m_courses(std::move(snapshot.courses)) {
+}
+
+std::expected<CourseSelectionService, AppError> CourseSelectionService::create(SqliteStorage& storage) {
+    auto snapshot = storage.load();
+    if (!snapshot) {
+        return std::unexpected(snapshot.error());
+    }
+    return CourseSelectionService{storage, std::move(*snapshot)};
+}
 
 std::expected<void, AppError> CourseSelectionService::addStudent(std::string_view name, int id) {
     if (isBlank(name)) {
@@ -18,6 +32,10 @@ std::expected<void, AppError> CourseSelectionService::addStudent(std::string_vie
         return std::unexpected(makeError(AppErrorCode::StudentAlreadyExists, "学生ID已存在。"));
     }
 
+    auto stored = m_storage.insertStudent(name, id);
+    if (!stored) {
+        return std::unexpected(stored.error());
+    }
     m_students.emplace_back(std::string{name}, id);
     return {};
 }
@@ -30,6 +48,10 @@ std::expected<void, AppError> CourseSelectionService::addTeacher(std::string_vie
         return std::unexpected(makeError(AppErrorCode::TeacherAlreadyExists, "教师已存在。"));
     }
 
+    auto stored = m_storage.insertTeacher(name);
+    if (!stored) {
+        return std::unexpected(stored.error());
+    }
     m_teachers.emplace_back(std::string{name});
     return {};
 }
@@ -48,6 +70,10 @@ std::expected<void, AppError> CourseSelectionService::addCourse(
         return std::unexpected(makeError(AppErrorCode::CourseAlreadyExists, "课程ID已存在。"));
     }
 
+    auto stored = m_storage.insertCourse(name, id, description);
+    if (!stored) {
+        return std::unexpected(stored.error());
+    }
     m_courses.emplace_back(std::string{name}, id, std::string{description});
     return {};
 }
@@ -63,12 +89,20 @@ std::expected<void, AppError> CourseSelectionService::selectCourse(int studentId
         return std::unexpected(makeError(AppErrorCode::CourseNotFound, "未找到课程。"));
     }
 
-    if (studentIt->hasSelectedCourse(courseId)) {
+    if (studentIt->hasSelectedCourse(courseId) || courseIt->hasStudent(studentId)) {
         return std::unexpected(makeError(AppErrorCode::CourseAlreadySelected, "该学生已经选择了这门课程。"));
     }
 
-    studentIt->enroll(courseId);
-    courseIt->enrollStudent(studentId);
+    auto stored = m_storage.insertEnrollment(studentId, courseId);
+    if (!stored) {
+        return std::unexpected(stored.error());
+    }
+
+    const bool studentUpdated = studentIt->enroll(courseId);
+    const bool courseUpdated = courseIt->enrollStudent(studentId);
+    if (!studentUpdated || !courseUpdated) {
+        return std::unexpected(makeError(AppErrorCode::InvalidData, "内存中的选课关联状态不一致。"));
+    }
     return {};
 }
 
@@ -100,7 +134,13 @@ std::expected<void, AppError> CourseSelectionService::setScore(int courseId, int
         return std::unexpected(makeError(AppErrorCode::CourseNotSelected, "该学生没有选择这门课程。"));
     }
 
-    courseIt->setScore(studentId, score);
+    auto stored = m_storage.updateScore(courseId, studentId, score);
+    if (!stored) {
+        return std::unexpected(stored.error());
+    }
+    if (!courseIt->setScore(studentId, score)) {
+        return std::unexpected(makeError(AppErrorCode::InvalidData, "内存中的成绩关联状态不一致。"));
+    }
     return {};
 }
 
@@ -112,7 +152,8 @@ std::expected<std::reference_wrapper<const Student>, AppError> CourseSelectionSe
     return std::cref(*it);
 }
 
-std::expected<std::reference_wrapper<const Teacher>, AppError> CourseSelectionService::findTeacher(std::string_view name) const {
+std::expected<std::reference_wrapper<const Teacher>, AppError> CourseSelectionService::findTeacher(
+    std::string_view name) const {
     auto it = findTeacherIt(name);
     if (it == m_teachers.end()) {
         return std::unexpected(makeError(AppErrorCode::TeacherNotFound, "未找到教师。"));
@@ -167,13 +208,14 @@ std::expected<StudentCoursesView, AppError> CourseSelectionService::studentCours
 
     for (int courseId : student.enrolledCourseIds()) {
         auto courseResult = findCourse(courseId);
-        if (courseResult) {
-            const auto& course = courseResult->get();
-            view.courses.push_back(StudentCourseInfo{
-                .courseId = course.id(),
-                .courseName = std::string{course.name()},
-                .description = std::string{course.description()}});
+        if (!courseResult) {
+            return std::unexpected(makeError(AppErrorCode::InvalidData, "学生关联了不存在的课程。"));
         }
+        const auto& course = courseResult->get();
+        view.courses.push_back(StudentCourseInfo{
+            .courseId = course.id(),
+            .courseName = std::string{course.name()},
+            .description = std::string{course.description()}});
     }
     return view;
 }
@@ -192,13 +234,14 @@ std::expected<StudentScoresView, AppError> CourseSelectionService::studentScores
 
     for (int courseId : student.enrolledCourseIds()) {
         auto courseResult = findCourse(courseId);
-        if (courseResult) {
-            const auto& course = courseResult->get();
-            view.scores.push_back(StudentScoreInfo{
-                .courseId = course.id(),
-                .courseName = std::string{course.name()},
-                .score = course.scoreFor(student.id())});
+        if (!courseResult) {
+            return std::unexpected(makeError(AppErrorCode::InvalidData, "学生关联了不存在的课程。"));
         }
+        const auto& course = courseResult->get();
+        view.scores.push_back(StudentScoreInfo{
+            .courseId = course.id(),
+            .courseName = std::string{course.name()},
+            .score = course.scoreFor(student.id())});
     }
     return view;
 }
@@ -218,12 +261,6 @@ std::expected<CourseStatistics, AppError> CourseSelectionService::courseStatisti
         .averageScore = course.averageScore(),
         .highestScore = course.highestScore(),
         .lowestScore = course.lowestScore()};
-}
-
-void CourseSelectionService::clear() noexcept {
-    m_students.clear();
-    m_teachers.clear();
-    m_courses.clear();
 }
 
 std::vector<Student>::iterator CourseSelectionService::findStudentIt(int id) {

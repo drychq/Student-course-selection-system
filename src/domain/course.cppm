@@ -1,7 +1,6 @@
-#include "domain/course.h"
+module scs.domain;
 
-#include <algorithm>
-#include <utility>
+import std;
 
 namespace scs {
 

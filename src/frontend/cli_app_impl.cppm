@@ -1,9 +1,8 @@
-#include "frontend/cli_app.h"
+module scs.frontend;
 
-#include <cctype>
-#include <iomanip>
-#include <iostream>
-#include <limits>
+import std;
+import scs.persistence;
+import scs.service;
 
 namespace scs {
 
@@ -15,8 +14,8 @@ std::string scoreText(const std::optional<int>& score) {
 
 } // namespace
 
-CliApp::CliApp(CourseSelectionService& service, FileStorage& storage)
-    : m_service(service), m_storage(storage) {
+CliApp::CliApp(CourseSelectionService& service)
+    : m_service(service) {
 }
 
 void CliApp::run() {
@@ -27,12 +26,11 @@ void CliApp::run() {
 }
 
 void CliApp::showMainMenu() const {
-    std::cout << "\n--- 课程选择系统 ---\n";
-    std::cout << "1. 学生管理\n";
-    std::cout << "2. 教师管理\n";
-    std::cout << "3. 课程管理\n";
-    std::cout << "4. 数据管理\n";
-    std::cout << "5. 退出\n";
+    std::println("\n--- 课程选择系统 ---");
+    std::println("1. 学生管理");
+    std::println("2. 教师管理");
+    std::println("3. 课程管理");
+    std::println("4. 退出");
 }
 
 void CliApp::handleMainMenu() {
@@ -52,25 +50,22 @@ void CliApp::handleMainMenu() {
         handleCourseMenu();
         break;
     case 4:
-        handleDataMenu();
-        break;
-    case 5:
-        std::cout << "感谢使用，再见！\n";
+        std::println("感谢使用，再见！");
         m_running = false;
         break;
     default:
-        std::cout << "无效选择，请重试。\n";
+        std::println("无效选择，请重试。");
         break;
     }
 }
 
 void CliApp::handleStudentMenu() {
-    std::cout << "\n--- 学生管理 ---\n";
-    std::cout << "1. 添加学生\n";
-    std::cout << "2. 学生选课\n";
-    std::cout << "3. 查看学生成绩\n";
-    std::cout << "4. 查看学生已选课程\n";
-    std::cout << "5. 返回主菜单\n";
+    std::println("\n--- 学生管理 ---");
+    std::println("1. 添加学生");
+    std::println("2. 学生选课");
+    std::println("3. 查看学生成绩");
+    std::println("4. 查看学生已选课程");
+    std::println("5. 返回主菜单");
 
     auto choice = readNonNegativeInt("请输入您的选择: ");
     if (!choice) {
@@ -93,17 +88,17 @@ void CliApp::handleStudentMenu() {
     case 5:
         break;
     default:
-        std::cout << "无效选择，请重试。\n";
+        std::println("无效选择，请重试。");
         break;
     }
 }
 
 void CliApp::handleTeacherMenu() {
-    std::cout << "\n--- 教师管理 ---\n";
-    std::cout << "1. 添加教师\n";
-    std::cout << "2. 导入学生成绩\n";
-    std::cout << "3. 查看课程信息\n";
-    std::cout << "4. 返回主菜单\n";
+    std::println("\n--- 教师管理 ---");
+    std::println("1. 添加教师");
+    std::println("2. 导入学生成绩");
+    std::println("3. 查看课程信息");
+    std::println("4. 返回主菜单");
 
     auto choice = readNonNegativeInt("请输入您的选择: ");
     if (!choice) {
@@ -123,16 +118,16 @@ void CliApp::handleTeacherMenu() {
     case 4:
         break;
     default:
-        std::cout << "无效选择，请重试。\n";
+        std::println("无效选择，请重试。");
         break;
     }
 }
 
 void CliApp::handleCourseMenu() {
-    std::cout << "\n--- 课程管理 ---\n";
-    std::cout << "1. 添加课程\n";
-    std::cout << "2. 课程统计\n";
-    std::cout << "3. 返回主菜单\n";
+    std::println("\n--- 课程管理 ---");
+    std::println("1. 添加课程");
+    std::println("2. 课程统计");
+    std::println("3. 返回主菜单");
 
     auto choice = readNonNegativeInt("请输入您的选择: ");
     if (!choice) {
@@ -149,33 +144,7 @@ void CliApp::handleCourseMenu() {
     case 3:
         break;
     default:
-        std::cout << "无效选择，请重试。\n";
-        break;
-    }
-}
-
-void CliApp::handleDataMenu() {
-    std::cout << "\n--- 数据管理 ---\n";
-    std::cout << "1. 保存数据\n";
-    std::cout << "2. 加载数据\n";
-    std::cout << "3. 返回主菜单\n";
-
-    auto choice = readNonNegativeInt("请输入您的选择: ");
-    if (!choice) {
-        return;
-    }
-
-    switch (*choice) {
-    case 1:
-        saveData();
-        break;
-    case 2:
-        loadData();
-        break;
-    case 3:
-        break;
-    default:
-        std::cout << "无效选择，请重试。\n";
+        std::println("无效选择，请重试。");
         break;
     }
 }
@@ -191,7 +160,7 @@ void CliApp::addStudent() {
     }
 
     if (!confirm("确定要添加学生 \"" + name + "\" (ID: " + std::to_string(*id) + ") 吗？")) {
-        std::cout << "已取消添加学生操作。\n";
+        std::println("已取消添加学生操作。");
         return;
     }
 
@@ -200,7 +169,7 @@ void CliApp::addStudent() {
         printError(result.error());
         return;
     }
-    std::cout << "学生添加成功！\n";
+    std::println("学生添加成功！");
 }
 
 void CliApp::selectCourse() {
@@ -214,7 +183,7 @@ void CliApp::selectCourse() {
     }
 
     if (!confirm("确定要为该学生选择课程吗？")) {
-        std::cout << "已取消选课操作。\n";
+        std::println("已取消选课操作。");
         return;
     }
 
@@ -223,7 +192,7 @@ void CliApp::selectCourse() {
         printError(result.error());
         return;
     }
-    std::cout << "选课成功！\n";
+    std::println("选课成功！");
 }
 
 void CliApp::viewStudentScores() {
@@ -240,16 +209,14 @@ void CliApp::viewStudentScores() {
 
     const auto& view = *result;
     if (view.scores.empty()) {
-        std::cout << "学生 " << view.studentName << " 还没有选择任何课程。\n";
+        std::println("学生 {} 还没有选择任何课程。", view.studentName);
         return;
     }
 
-    std::cout << "学生 " << view.studentName << " (ID: " << view.studentId << ") 的成绩：\n";
-    std::cout << std::left << std::setw(12) << "课程ID" << std::setw(24) << "课程名称" << "成绩\n";
+    std::println("学生 {} (ID: {}) 的成绩：", view.studentName, view.studentId);
+    std::println("{:<12}{:<24}{}", "课程ID", "课程名称", "成绩");
     for (const auto& row : view.scores) {
-        std::cout << std::left << std::setw(12) << row.courseId
-                  << std::setw(24) << row.courseName
-                  << scoreText(row.score) << '\n';
+        std::println("{:<12}{:<24}{}", row.courseId, row.courseName, scoreText(row.score));
     }
 }
 
@@ -267,16 +234,14 @@ void CliApp::viewStudentCourses() {
 
     const auto& view = *result;
     if (view.courses.empty()) {
-        std::cout << "学生 " << view.studentName << " 还没有选择任何课程。\n";
+        std::println("学生 {} 还没有选择任何课程。", view.studentName);
         return;
     }
 
-    std::cout << "学生 " << view.studentName << " (ID: " << view.studentId << ") 已选课程：\n";
-    std::cout << std::left << std::setw(12) << "课程ID" << std::setw(24) << "课程名称" << "课程描述\n";
+    std::println("学生 {} (ID: {}) 已选课程：", view.studentName, view.studentId);
+    std::println("{:<12}{:<24}{}", "课程ID", "课程名称", "课程描述");
     for (const auto& course : view.courses) {
-        std::cout << std::left << std::setw(12) << course.courseId
-                  << std::setw(24) << course.courseName
-                  << course.description << '\n';
+        std::println("{:<12}{:<24}{}", course.courseId, course.courseName, course.description);
     }
 }
 
@@ -287,7 +252,7 @@ void CliApp::addTeacher() {
     }
 
     if (!confirm("确定要添加教师 \"" + name + "\" 吗？")) {
-        std::cout << "已取消添加教师操作。\n";
+        std::println("已取消添加教师操作。");
         return;
     }
 
@@ -296,7 +261,7 @@ void CliApp::addTeacher() {
         printError(result.error());
         return;
     }
-    std::cout << "教师添加成功！\n";
+    std::println("教师添加成功！");
 }
 
 void CliApp::importScore() {
@@ -318,7 +283,7 @@ void CliApp::importScore() {
     }
 
     if (!confirm("确定要导入该成绩吗？")) {
-        std::cout << "已取消成绩导入操作。\n";
+        std::println("已取消成绩导入操作。");
         return;
     }
 
@@ -327,7 +292,7 @@ void CliApp::importScore() {
         printError(result.error());
         return;
     }
-    std::cout << "成绩导入成功！\n";
+    std::println("成绩导入成功！");
 }
 
 void CliApp::viewCoursesForTeacher() {
@@ -354,12 +319,12 @@ void CliApp::addCourse() {
     }
     auto description = readLine("输入课程描述: ");
     if (description.empty() && !confirm("课程描述为空，是否继续添加课程？")) {
-        std::cout << "已取消添加课程操作。\n";
+        std::println("已取消添加课程操作。");
         return;
     }
 
     if (!confirm("确定要添加课程 \"" + name + "\" (ID: " + std::to_string(*id) + ") 吗？")) {
-        std::cout << "已取消添加课程操作。\n";
+        std::println("已取消添加课程操作。");
         return;
     }
 
@@ -368,7 +333,7 @@ void CliApp::addCourse() {
         printError(result.error());
         return;
     }
-    std::cout << "课程添加成功！\n";
+    std::println("课程添加成功！");
 }
 
 void CliApp::showCourseStatistics() {
@@ -384,84 +349,42 @@ void CliApp::showCourseStatistics() {
     }
 
     const auto& stats = *result;
-    std::cout << "课程 \"" << stats.courseName << "\" (ID: " << stats.courseId << ") 统计信息：\n";
-    std::cout << "选课人数：" << stats.enrolledCount << '\n';
-    std::cout << "已评分人数：" << stats.gradedCount << '\n';
+    std::println("课程 \"{}\" (ID: {}) 统计信息：", stats.courseName, stats.courseId);
+    std::println("选课人数：{}", stats.enrolledCount);
+    std::println("已评分人数：{}", stats.gradedCount);
     if (stats.gradedCount == 0) {
-        std::cout << "暂无成绩数据\n";
+        std::println("暂无成绩数据");
         return;
     }
-    std::cout << "平均分：" << std::fixed << std::setprecision(2) << stats.averageScore << '\n';
-    std::cout << "最高分：" << *stats.highestScore << '\n';
-    std::cout << "最低分：" << *stats.lowestScore << '\n';
-}
-
-void CliApp::saveData() {
-    auto directory = readLine("输入要保存的数据目录名称: ");
-    if (directory.empty()) {
-        return;
-    }
-    if (!confirm("确定要将数据保存到目录 \"" + directory + "\" 吗？")) {
-        std::cout << "已取消保存数据操作。\n";
-        return;
-    }
-
-    auto result = m_storage.save(m_service, directory);
-    if (!result) {
-        printError(result.error());
-        return;
-    }
-    std::cout << "数据保存成功！\n";
-}
-
-void CliApp::loadData() {
-    auto directory = readLine("输入要加载的数据目录名称: ");
-    if (directory.empty()) {
-        return;
-    }
-    if (!confirm("确定要从目录 \"" + directory + "\" 加载数据吗？这将覆盖当前所有数据！")) {
-        std::cout << "已取消加载数据操作。\n";
-        return;
-    }
-
-    auto result = m_storage.load(m_service, directory);
-    if (!result) {
-        printError(result.error());
-        return;
-    }
-    std::cout << "数据加载成功！\n";
+    std::println("平均分：{:.2f}", stats.averageScore);
+    std::println("最高分：{}", *stats.highestScore);
+    std::println("最低分：{}", *stats.lowestScore);
 }
 
 void CliApp::printCourses() const {
     auto courses = m_service.listCourses();
     if (courses.empty()) {
-        std::cout << "当前没有任何课程。\n";
+        std::println("当前没有任何课程。");
         return;
     }
 
-    std::cout << "所有课程信息：\n";
-    std::cout << std::left << std::setw(12) << "课程ID"
-              << std::setw(24) << "课程名称"
-              << std::setw(32) << "课程描述"
-              << "选课人数\n";
+    std::println("所有课程信息：");
+    std::println("{:<12}{:<24}{:<32}{}", "课程ID", "课程名称", "课程描述", "选课人数");
     for (const auto& course : courses) {
-        std::cout << std::left << std::setw(12) << course.id
-                  << std::setw(24) << course.name
-                  << std::setw(32) << course.description
-                  << course.studentCount << '\n';
+        std::println("{:<12}{:<24}{:<32}{}", course.id, course.name, course.description, course.studentCount);
     }
 }
 
 void CliApp::printError(const AppError& error) const {
-    std::cout << "错误：" << error.message << '\n';
+    std::println("错误：{}", error.message);
 }
 
 std::optional<int> CliApp::readNonNegativeInt(std::string_view prompt) {
-    std::cout << prompt;
+    std::print(std::cout, "{}", prompt);
     int value = 0;
     std::cin >> value;
     if (std::cin.fail() || value < 0) {
-        std::cout << "无效输入，请输入一个非负整数。\n";
+        std::println("无效输入，请输入一个非负整数。");
         clearInput();
         return std::nullopt;
     }
@@ -470,7 +393,7 @@ std::optional<int> CliApp::readNonNegativeInt(std::string_view prompt) {
 }
 
 std::string CliApp::readToken(std::string_view prompt) {
-    std::cout << prompt;
+    std::print(std::cout, "{}", prompt);
     std::string value;
     std::cin >> value;
     if (std::cin.fail()) {
@@ -479,13 +402,13 @@ std::string CliApp::readToken(std::string_view prompt) {
     }
     clearInput();
     if (value.empty()) {
-        std::cout << "输入不能为空，请重新输入。\n";
+        std::println("输入不能为空，请重新输入。");
     }
     return value;
 }
 
 std::string CliApp::readLine(std::string_view prompt) {
-    std::cout << prompt;
+    std::print(std::cout, "{}", prompt);
     std::string value;
     std::getline(std::cin, value);
     if (std::cin.fail()) {
@@ -496,7 +419,7 @@ std::string CliApp::readLine(std::string_view prompt) {
 }
 
 bool CliApp::confirm(std::string_view prompt) {
-    std::cout << prompt << " (y/n): ";
+    std::print(std::cout, "{} (y/n): ", prompt);
     char response = '\0';
     std::cin >> response;
     clearInput();

@@ -1,6 +1,6 @@
-#include "domain/teacher.h"
+module scs.domain;
 
-#include <utility>
+import std;
 
 namespace scs {
 

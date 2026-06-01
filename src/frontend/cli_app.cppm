@@ -1,23 +1,19 @@
-#pragma once
+export module scs.frontend;
 
-#include "persistence/file_storage.h"
-#include "service/course_selection_service.h"
+import std;
+import scs.persistence;
+import scs.service;
 
-#include <optional>
-#include <string>
-#include <string_view>
-
-namespace scs {
+export namespace scs {
 
 class CliApp {
 public:
-    CliApp(CourseSelectionService& service, FileStorage& storage);
+    explicit CliApp(CourseSelectionService& service);
 
     void run();
 
 private:
     CourseSelectionService& m_service;
-    FileStorage& m_storage;
     bool m_running = true;
 
     void showMainMenu() const;
@@ -25,7 +21,6 @@ private:
     void handleStudentMenu();
     void handleTeacherMenu();
     void handleCourseMenu();
-    void handleDataMenu();
 
     void addStudent();
     void selectCourse();
@@ -39,16 +34,13 @@ private:
     void addCourse();
     void showCourseStatistics();
 
-    void saveData();
-    void loadData();
-
     void printCourses() const;
     void printError(const AppError& error) const;
 
-    std::optional<int> readNonNegativeInt(std::string_view prompt);
-    std::string readToken(std::string_view prompt);
-    std::string readLine(std::string_view prompt);
-    bool confirm(std::string_view prompt);
+    [[nodiscard]] std::optional<int> readNonNegativeInt(std::string_view prompt);
+    [[nodiscard]] std::string readToken(std::string_view prompt);
+    [[nodiscard]] std::string readLine(std::string_view prompt);
+    [[nodiscard]] bool confirm(std::string_view prompt);
     void clearInput();
 };
 
