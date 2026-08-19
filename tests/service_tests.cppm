@@ -1,7 +1,6 @@
 import std;
 import scs.persistence;
 import scs.service;
-import scs.test.sqlite_support;
 
 using scs::AppErrorCode;
 using scs::CourseSelectionService;
@@ -159,13 +158,6 @@ void testForeignKeyConstraint() {
     requireErrorCode(storage.insertEnrollment(999, 999), AppErrorCode::SqlExecutionFailed);
 }
 
-void testUnsupportedSchemaVersion() {
-    TempDatabase database{"unsupported-schema.db"};
-    require(scs::test::setSchemaVersion(database.path, 99), "无法写入 schema 版本。");
-
-    requireErrorCode(SqliteStorage::open(database.path), AppErrorCode::UnsupportedSchemaVersion);
-}
-
 void testDatabasePathError() {
     const auto blocker = std::filesystem::current_path() / "build" / "service-test-data" / "not-a-directory";
     std::error_code errorCode;
@@ -203,7 +195,6 @@ int main() {
         testCourseStatistics();
         testRealtimePersistence();
         testForeignKeyConstraint();
-        testUnsupportedSchemaVersion();
         testDatabasePathError();
         testWriteFailureDoesNotMutateMemory();
         std::println("所有测试通过。");

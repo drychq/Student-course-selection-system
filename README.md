@@ -2,7 +2,7 @@
 
 ## 简介
 
-这是一个基于命令行的学生选课系统，使用 C++23 named modules、`import std;`、SQLite 和 xmake 构建。
+这是一个基于命令行的学生选课系统，使用 C++23 named modules、`import std;`、SQLiteCpp、SQLite 和 xmake 构建。
 
 项目分为四个模块：
 
@@ -21,7 +21,7 @@
 - Linux：GCC 15.2
 - macOS：Homebrew GCC 15.2，不支持系统默认 AppleClang
 
-SQLite 由 xmake 自动获取并静态链接。
+SQLiteCpp 3.3.3 和 SQLite 3.53 由 xmake 自动获取并静态链接；SQLiteCpp 复用项目指定的 SQLite，不会链接第二份数据库引擎。
 
 ## 构建与运行
 
@@ -36,7 +36,9 @@ xmake run Student-course-selection-system
 xmake run Student-course-selection-system -- custom/path/courses.db
 ```
 
-应用启动时自动创建数据库和 schema。业务变更会立即写入 SQLite，不需要手动保存或加载。
+应用启动时自动创建并严格校验当前 STRICT schema。数据库连接采用 5 秒 busy timeout、外键约束、DELETE journal 和独占锁；同一数据库同一时间只允许一个应用实例。业务变更会立即写入 SQLite，不需要手动保存或加载。
+
+项目不维护 schema 版本或迁移脚本。检测到旧版、不完整或数据不符合当前约束的应用表时，会在事务中直接重建四张应用表并丢弃其中数据；无关的其他用户表不会被主动删除。
 
 ## 测试
 
